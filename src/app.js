@@ -7,13 +7,16 @@ const ejercicioRoutes = require("./routes/ejercicio.routes");
 const rutinaRoutes = require("./routes/rutina.routes");     
 const authRoutes = require("./routes/auth.routes");
 const adminRoutes = require("./routes/admin.routes");
-
-
 const app = express();
+
+app.use(cors({
+  origin: '*', // Por ahora, prueba con asterisco para ver si funciona
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 
 app.set('trust proxy', 1);
 
-app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
