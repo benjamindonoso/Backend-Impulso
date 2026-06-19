@@ -19,6 +19,13 @@ app.set('trust proxy', 1);
 
 app.use(express.json());
 
+// 👇 AÑADE EL CÓDIGO DE PRUEBA JUSTO AQUÍ 👇
+app.use((req, res, next) => {
+  console.log('--- Nueva petición recibida:', req.method, req.url);
+  next();
+});
+// 👆 ------------------------------------- 👆
+
 app.get("/", (req, res) => {
   res.json({
     message: "Gym API funcionando"
