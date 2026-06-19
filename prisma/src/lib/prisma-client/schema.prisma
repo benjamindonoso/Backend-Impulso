@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./src/lib/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql" // o "mysql", "sqlite", etc.
+  url      = env("DATABASE_URL")
+}
+
+model Administrador {
+  id Int @id @default(autoincrement())
+
+  nombre String
+
+  email String @unique
+
+  passwordHash String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Familia {
+  id Int @id @default(autoincrement())
+
+  nombre String
+
+  plan String?
+
+  activa Boolean @default(true)
+
+  integrantes Cliente[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cliente {
+  id Int @id @default(autoincrement())
+
+  nombre String
+
+  apellidoP String
+  apellidoM String
+
+  codigoQr String? @unique
+
+  telefono String?
+
+  email String?
+
+  fechaNacimiento DateTime?
+
+  activo Boolean @default(true)
+
+  esTitular Boolean @default(false)
+
+  familiaId Int?
+
+  familia Familia? @relation(fields: [familiaId], references: [id])
+
+  rutinas Rutina[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([nombre])
+  @@index([apellidoP])
+  @@index([apellidoM])
+}
+
+model Ejercicio {
+  id Int @id @default(autoincrement())
+
+  nombre String @unique
+
+  descripcion String?
+
+  videoUrl String?
+
+  rutinas RutinaEjercicio[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Rutina {
+  id Int @id @default(autoincrement())
+
+  nombre String
+
+  diaSemana String?
+
+  descripcion String?
+
+  activa Boolean @default(true)
+
+  clienteId Int
+
+  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  ejercicios RutinaEjercicio[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RutinaEjercicio {
+  id Int @id @default(autoincrement())
+
+  rutinaId Int
+
+  ejercicioId Int
+
+  orden Int
+
+  series Int
+
+  repeticiones Int
+
+  peso Float?
+
+  descansoSeg Int?
+
+  observaciones String?
+
+  rutina Rutina @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
+
+  ejercicio Ejercicio @relation(fields: [ejercicioId], references: [id])
+
+  createdAt DateTime @default(now())
+}

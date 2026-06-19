@@ -1,0 +1,20 @@
+# Dependencias
+node_modules/
+npm-debug.log
+dist/
+build/
+
+# Variables de entorno (¡CRUCIAL POR SEGURIDAD!)
+.env
+
+# Archivos de logs y bases de datos locales
+*.log
+*.sqlite
+*.sqlite-journal
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Prisma (opcional, pero recomendado)
+prisma/migrations/
