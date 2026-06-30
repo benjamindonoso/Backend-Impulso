@@ -16,9 +16,9 @@ router.get('/cliente/:clienteId', async (req, res) => {
       },
       include: {
         ejercicios: {
-          orderBy: { orden: 'asc' }, // Respeta el orden que le dio el entrenador
+          orderBy: { orden: 'asc' }, 
           include: {
-            ejercicio: true // Trae el nombre del ejercicio y el videoUrl de la tabla maestra
+            ejercicio: true 
           }
         }
       }
