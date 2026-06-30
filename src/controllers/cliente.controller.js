@@ -60,7 +60,7 @@ const actualizarCliente = async (req, res) => {
     if (activo !== undefined) dataToUpdate.activo = activo;
 
     if (esTitular !== undefined) {
-       dataToUpdate.esTitular = (esTitular === true || esTitular === 'true');
+      dataToUpdate.esTitular = (esTitular === true || esTitular === 'true');
     }
 
     if (familiaId !== undefined) {
