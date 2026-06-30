@@ -18,7 +18,6 @@ router.put('/bulk', async (req, res) => {
   const { clientesActualizados } = req.body;
 
   try {
-    // Usamos prisma.$transaction para asegurar que todos se guarden juntos
     const actualizaciones = clientesActualizados.map((cliente) => {
       return prisma.cliente.update({
         where: { id: cliente.id },
@@ -27,7 +26,9 @@ router.put('/bulk', async (req, res) => {
           apellidoP: cliente.apellidoP,
           email: cliente.email,
           telefono: cliente.telefono,
-          activo: cliente.activo
+          activo: cliente.activo,
+          familiaId: cliente.familiaId !== undefined && cliente.familiaId !== '' ? parseInt(cliente.familiaId) : null,
+          esTitular: cliente.esTitular ?? false,
         }
       });
     });
