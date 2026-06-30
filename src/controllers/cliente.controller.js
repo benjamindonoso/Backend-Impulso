@@ -17,6 +17,13 @@ const getClientes = async (req, res) => {
 const crearCliente = async (req, res) => {
   try {
     const { rut, nombre, apellidoP, apellidoM, telefono, email, familiaId, esTitular } = req.body;
+    
+    // Parseo seguro de familiaId
+    let parsedFamiliaId = null;
+    if (familiaId !== undefined && familiaId !== null && familiaId !== "" && familiaId !== "null") {
+      parsedFamiliaId = parseInt(familiaId);
+    }
+
     const cliente = await prisma.cliente.create({
       data: {
         rut, 
@@ -25,8 +32,8 @@ const crearCliente = async (req, res) => {
         apellidoM,
         telefono,
         email,
-        familiaId,
-        esTitular
+        familiaId: parsedFamiliaId,
+        esTitular: esTitular === true || esTitular === 'true' // Manejo seguro de booleanos
       }
     });
     res.status(201).json(cliente);
@@ -40,23 +47,40 @@ const actualizarCliente = async (req, res) => {
   try {
     const { id } = req.params;
     const { rut, nombre, apellidoP, apellidoM, telefono, email, familiaId, esTitular, activo } = req.body;
+    
+    // Construir el objeto dinámicamente para evitar borrar datos accidentalmente
+    const dataToUpdate = {};
+    
+    if (rut !== undefined) dataToUpdate.rut = rut;
+    if (nombre !== undefined) dataToUpdate.nombre = nombre;
+    if (apellidoP !== undefined) dataToUpdate.apellidoP = apellidoP;
+    if (apellidoM !== undefined) dataToUpdate.apellidoM = apellidoM;
+    if (telefono !== undefined) dataToUpdate.telefono = telefono;
+    if (email !== undefined) dataToUpdate.email = email;
+    if (activo !== undefined) dataToUpdate.activo = activo;
+
+    if (esTitular !== undefined) {
+       dataToUpdate.esTitular = (esTitular === true || esTitular === 'true');
+    }
+
+    if (familiaId !== undefined) {
+      // Si el frontend envía vacío, null o la palabra "null", lo desvinculamos (Plan individual)
+      if (familiaId === "" || familiaId === "null" || familiaId === null) {
+        dataToUpdate.familiaId = null;
+      } else {
+        // De lo contrario, lo asignamos a la nueva familia
+        dataToUpdate.familiaId = parseInt(familiaId);
+      }
+    }
+
     const clienteActualizado = await prisma.cliente.update({
       where: { id: parseInt(id) },
-      data: {
-        rut,
-        nombre,
-        apellidoP,
-        apellidoM,
-        telefono,
-        email,
-        familiaId: familiaId ? parseInt(familiaId) : null,
-        esTitular,
-        activo,
-      },
+      data: dataToUpdate,
     });
+    
     res.json(clienteActualizado);
   } catch (error) {
-    console.error(error);
+    console.error("Error en actualizarCliente:", error);
     res.status(500).json({ error: "Error al actualizar el cliente" });
   }
 };
