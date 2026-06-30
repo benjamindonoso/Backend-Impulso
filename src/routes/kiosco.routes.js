@@ -15,7 +15,8 @@ router.get('/directorio', async (req, res) => {
       where: { activa: true },
       include: {
         integrantes: {
-          select: { nombre: true, apellidoP: true }
+          // 👇 CAMBIO 1: Agregamos "id: true" a la consulta
+          select: { id: true, nombre: true, apellidoP: true } 
         }
       }
     });
@@ -28,7 +29,11 @@ router.get('/directorio', async (req, res) => {
     const familiasFormateadas = familias.map(f => ({
       id: f.id,
       nombre: f.nombre,
-      integrantes: f.integrantes.map(i => `${i.nombre} ${i.apellidoP}`)
+      // 👇 CAMBIO 2: En vez de un texto plano, devolvemos un objeto con ID y Nombre
+      integrantes: f.integrantes.map(i => ({
+        id: i.id,
+        nombre: `${i.nombre} ${i.apellidoP}`
+      }))
     }));
 
     res.json({ individuos: individuosFormateados, familias: familiasFormateadas });
