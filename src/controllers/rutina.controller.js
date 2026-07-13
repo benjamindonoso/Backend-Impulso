@@ -39,7 +39,8 @@ const crearMesociclo = async (req, res) => {
 };
 
 const crearRutina = async (req, res) => {
-  const { nombre, diaSemana, descripcion, mesocicloId, clienteId, listaEjercicios } = req.body;
+  const { nombre, diaSemana, descripcion, mesocicloId, clienteId, listaEjercicios } = req.body; 
+  
   try {
     const nuevaRutina = await prisma.rutina.create({
       data: {
@@ -47,24 +48,14 @@ const crearRutina = async (req, res) => {
         diaSemana,
         descripcion,
         mesocicloId: Number(mesocicloId),
-        clienteId: Number(clienteId),
-        ejercicios: { 
-          create: listaEjercicios.map(ej => ({
-            ejercicioId: ej.ejercicioId,
-            orden: ej.orden,
-            series: ej.series,
-            repeticiones: ej.repeticiones,
-            peso: ej.peso,
-            descansoSeg: ej.descansoSeg,
-            observaciones: ej.observaciones
-          })) 
-        }
+        clienteId: Number(clienteId), 
+        ejercicios: { create: listaEjercicios }
       }
     });
     res.status(201).json(nuevaRutina);
   } catch (error) {
-    console.error("[ERROR AL CREAR RUTINA]:", error);
-    res.status(500).json({ error: 'Error al crear la rutina' });
+    console.error("[ERROR AL CREAR RUTINA]:", error); 
+    res.status(500).json({ error: 'Error al asignar la rutina' });
   }
 };
 
