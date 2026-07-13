@@ -20,7 +20,7 @@ const getEstructuraEntrenamiento = async (req, res) => {
     });
     res.json(mesociclos);
   } catch (error) {
-    console.error(error);
+    console.error("[ERROR AL OBTENER ESTRUCTURA]:", error);
     res.status(500).json({ error: 'Error al obtener la estructura de entrenamiento' });
   }
 };
@@ -33,51 +33,75 @@ const crearMesociclo = async (req, res) => {
     });
     res.status(201).json(nuevoMesociclo);
   } catch (error) {
-    console.error(error);
+    console.error("[ERROR AL CREAR MESOCICLO]:", error);
     res.status(500).json({ error: 'Error al crear la semana' });
   }
 };
 
 const crearRutina = async (req, res) => {
-  const { nombre, diaSemana, descripcion, mesocicloId, clienteId, listaEjercicios } = req.body; 
-  
+  const { nombre, diaSemana, descripcion, mesocicloId, listaEjercicios } = req.body;
   try {
     const nuevaRutina = await prisma.rutina.create({
       data: {
         nombre,
         diaSemana,
         descripcion,
-        mesocicloId: Number(mesocicloId),
-        clienteId: Number(clienteId), // 2. AÑADIMOS ESTA LÍNEA CLAVE
-        ejercicios: { create: listaEjercicios }
+        mesocicloId: Number(mesocicloId), // Solo vinculamos al Mesociclo
+        ejercicios: { 
+          create: listaEjercicios.map(ej => ({
+            ejercicioId: ej.ejercicioId,
+            orden: ej.orden,
+            series: ej.series,
+            repeticiones: ej.repeticiones,
+            peso: ej.peso,
+            descansoSeg: ej.descansoSeg,
+            observaciones: ej.observaciones
+          })) 
+        }
       }
     });
     res.status(201).json(nuevaRutina);
   } catch (error) {
-    console.error("[ERROR AL CREAR RUTINA]:", error); 
-    res.status(500).json({ error: 'Error al asignar la rutina' });
+    console.error("[ERROR AL CREAR RUTINA]:", error);
+    res.status(500).json({ error: 'Error al crear la rutina' });
   }
 };
 
 const actualizarRutina = async (req, res) => {
   const { id } = req.params;
-  const { nombre, diaSemana, descripcion, listaEjercicios } = req.body;
+  const { nombre, diaSemana, descripcion, mesocicloId, listaEjercicios } = req.body;
   try {
     const rutinaActualizada = await prisma.$transaction(async (tx) => {
       const rutina = await tx.rutina.update({
         where: { id: Number(id) },
-        data: { nombre, diaSemana, descripcion }
+        data: { 
+          nombre, 
+          diaSemana, 
+          descripcion,
+          mesocicloId: Number(mesocicloId) 
+        }
       });
+      
       await tx.rutinaEjercicio.deleteMany({ where: { rutinaId: Number(id) } });
       if (listaEjercicios?.length > 0) {
         await tx.rutinaEjercicio.createMany({
-          data: listaEjercicios.map(ej => ({ ...ej, rutinaId: Number(id) }))
+          data: listaEjercicios.map(ej => ({
+            rutinaId: Number(id),
+            ejercicioId: ej.ejercicioId,
+            orden: ej.orden,
+            series: ej.series,
+            repeticiones: ej.repeticiones,
+            peso: ej.peso,
+            descansoSeg: ej.descansoSeg,
+            observaciones: ej.observaciones
+          }))
         });
       }
       return rutina;
     });
     res.json({ message: 'Rutina actualizada', rutinaActualizada });
   } catch (error) {
+    console.error("[ERROR AL ACTUALIZAR RUTINA]:", error);
     res.status(500).json({ error: 'Error al actualizar rutina' });
   }
 };
@@ -88,6 +112,7 @@ const eliminarRutina = async (req, res) => {
     await prisma.rutina.delete({ where: { id: Number(id) } });
     res.json({ message: 'Rutina eliminada correctamente' });
   } catch (error) {
+    console.error("[ERROR AL ELIMINAR RUTINA]:", error);
     res.status(500).json({ error: 'Error al eliminar la rutina' });
   }
 };
