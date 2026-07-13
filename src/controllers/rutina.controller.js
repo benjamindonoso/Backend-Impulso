@@ -39,8 +39,7 @@ const crearMesociclo = async (req, res) => {
 };
 
 const crearRutina = async (req, res) => {
-  // Extraemos estrictamente los datos que acepta la tabla Rutina
-  const { nombre, diaSemana, descripcion, mesocicloId, listaEjercicios } = req.body;
+  const { nombre, diaSemana, descripcion, mesocicloId, clienteId, listaEjercicios } = req.body;
   try {
     const nuevaRutina = await prisma.rutina.create({
       data: {
@@ -48,15 +47,16 @@ const crearRutina = async (req, res) => {
         diaSemana,
         descripcion,
         mesocicloId: Number(mesocicloId),
+        clienteId: Number(clienteId),
         ejercicios: { 
           create: listaEjercicios.map(ej => ({
-            ejercicioId: Number(ej.ejercicioId),
-            orden: Number(ej.orden),
-            series: Number(ej.series),
-            repeticiones: Number(ej.repeticiones),
-            peso: Number(ej.peso),
-            descansoSeg: Number(ej.descansoSeg),
-            observaciones: ej.observaciones || ''
+            ejercicioId: ej.ejercicioId,
+            orden: ej.orden,
+            series: ej.series,
+            repeticiones: ej.repeticiones,
+            peso: ej.peso,
+            descansoSeg: ej.descansoSeg,
+            observaciones: ej.observaciones
           })) 
         }
       }
@@ -70,7 +70,7 @@ const crearRutina = async (req, res) => {
 
 const actualizarRutina = async (req, res) => {
   const { id } = req.params;
-  const { nombre, diaSemana, descripcion, mesocicloId, listaEjercicios } = req.body;
+  const { nombre, diaSemana, descripcion, mesocicloId, clienteId, listaEjercicios } = req.body;
   try {
     const rutinaActualizada = await prisma.$transaction(async (tx) => {
       const rutina = await tx.rutina.update({
@@ -79,23 +79,25 @@ const actualizarRutina = async (req, res) => {
           nombre, 
           diaSemana, 
           descripcion,
-          mesocicloId: Number(mesocicloId) 
+          mesocicloId: Number(mesocicloId),
+          clienteId: Number(clienteId)
         }
       });
       
       await tx.rutinaEjercicio.deleteMany({ where: { rutinaId: Number(id) } });
       
-      if (listaEjercicios && listaEjercicios.length > 0) {
+      // 3. Insertamos los nuevos
+      if (listaEjercicios?.length > 0) {
         await tx.rutinaEjercicio.createMany({
           data: listaEjercicios.map(ej => ({
             rutinaId: Number(id),
-            ejercicioId: Number(ej.ejercicioId),
-            orden: Number(ej.orden),
-            series: Number(ej.series),
-            repeticiones: Number(ej.repeticiones),
-            peso: Number(ej.peso),
-            descansoSeg: Number(ej.descansoSeg),
-            observaciones: ej.observaciones || ''
+            ejercicioId: ej.ejercicioId,
+            orden: ej.orden,
+            series: ej.series,
+            repeticiones: ej.repeticiones,
+            peso: ej.peso,
+            descansoSeg: ej.descansoSeg,
+            observaciones: ej.observaciones
           }))
         });
       }
@@ -111,12 +113,7 @@ const actualizarRutina = async (req, res) => {
 const eliminarRutina = async (req, res) => {
   const { id } = req.params;
   try {
-    // 1. Primero borramos los ejercicios que contiene la rutina
-    await prisma.rutinaEjercicio.deleteMany({ where: { rutinaId: Number(id) } });
-    
-    // 2. Ahora sí podemos borrar la rutina libremente
     await prisma.rutina.delete({ where: { id: Number(id) } });
-    
     res.json({ message: 'Rutina eliminada correctamente' });
   } catch (error) {
     console.error("[ERROR AL ELIMINAR RUTINA]:", error);
