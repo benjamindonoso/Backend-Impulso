@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Obtener TODA la estructura de semanas y rutinas para un cliente
 const getEstructuraEntrenamiento = async (req, res) => {
   const { clienteId } = req.params;
   try {
@@ -26,7 +25,6 @@ const getEstructuraEntrenamiento = async (req, res) => {
   }
 };
 
-// Crear una nueva semana/mesociclo
 const crearMesociclo = async (req, res) => {
   const { nombre, orden, clienteId } = req.body;
   try {
@@ -40,7 +38,6 @@ const crearMesociclo = async (req, res) => {
   }
 };
 
-// Crear rutina asociada a un Mesociclo
 const crearRutina = async (req, res) => {
   const { nombre, diaSemana, descripcion, mesocicloId, listaEjercicios } = req.body;
   try {
@@ -59,7 +56,6 @@ const crearRutina = async (req, res) => {
   }
 };
 
-// Actualizar rutina (mantiene la lógica anterior pero asegura integridad)
 const actualizarRutina = async (req, res) => {
   const { id } = req.params;
   const { nombre, diaSemana, descripcion, listaEjercicios } = req.body;
@@ -83,7 +79,6 @@ const actualizarRutina = async (req, res) => {
   }
 };
 
-// Eliminar rutina
 const eliminarRutina = async (req, res) => {
   const { id } = req.params;
   try {
