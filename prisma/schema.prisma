@@ -8,6 +8,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Mesociclo {
+  id              Int      @id @default(autoincrement())
+  nombre          String   
+  orden           Int      
+  clienteId       Int
+  cliente         Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  rutinas         Rutina[] 
+  createdAt       DateTime @default(now())
+}
+
 model Administrador {
   id            Int      @id @default(autoincrement())
 
@@ -66,6 +76,8 @@ model Cliente {
 
   rutinas           Rutina[]
 
+  mesociclos      Mesociclo[] 
+
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -95,6 +107,10 @@ model Rutina {
   nombre          String
 
   diaSemana       String?
+
+  mesocicloId     Int
+
+  mesociclo       Mesociclo @relation(fields: [mesocicloId], references: [id], onDelete: Cascade)
 
   descripcion     String?
 
