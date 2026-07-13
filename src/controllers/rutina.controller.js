@@ -39,23 +39,24 @@ const crearMesociclo = async (req, res) => {
 };
 
 const crearRutina = async (req, res) => {
-  const { nombre, diaSemana, descripcion, mesocicloId, listaEjercicios } = req.body;
+  const { nombre, diaSemana, descripcion, mesocicloId, clienteId, listaEjercicios } = req.body;
   try {
     const nuevaRutina = await prisma.rutina.create({
       data: {
         nombre,
         diaSemana,
         descripcion,
-        mesocicloId: Number(mesocicloId), // Solo vinculamos al Mesociclo
+        mesocicloId: Number(mesocicloId), 
+        clienteId: Number(clienteId), 
         ejercicios: { 
           create: listaEjercicios.map(ej => ({
             ejercicioId: ej.ejercicioId,
             orden: ej.orden,
-            series: ej.series,
-            repeticiones: ej.repeticiones,
-            peso: ej.peso,
-            descansoSeg: ej.descansoSeg,
-            observaciones: ej.observaciones
+            series: Number(ej.series), 
+            repeticiones: Number(ej.repeticiones),
+            peso: Number(ej.peso),
+            descansoSeg: Number(ej.descansoSeg),
+            observaciones: ej.observaciones || ''
           })) 
         }
       }
