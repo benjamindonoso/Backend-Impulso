@@ -121,10 +121,22 @@ const eliminarRutina = async (req, res) => {
   }
 };
 
+const eliminarMesociclo = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.mesociclo.delete({ where: { id: Number(id) } });
+    res.json({ message: 'Semana eliminada correctamente' });
+  } catch (error) {
+    console.error("[ERROR AL ELIMINAR SEMANA]:", error);
+    res.status(500).json({ error: 'Error al eliminar la semana' });
+  }
+};
+
 module.exports = { 
   getEstructuraEntrenamiento, 
   crearMesociclo, 
   crearRutina,
   actualizarRutina,
-  eliminarRutina 
+  eliminarRutina,
+  eliminarMesociclo
 };

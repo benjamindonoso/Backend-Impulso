@@ -6,15 +6,14 @@ const {
   crearMesociclo, 
   crearRutina,
   actualizarRutina,
-  eliminarRutina
+  eliminarRutina,
+  eliminarMesociclo
 } = require('../controllers/rutina.controller');
 
 router.get('/cliente/:clienteId', getEstructuraEntrenamiento);
-
 router.post('/mesociclo', auth, crearMesociclo);
-
+router.delete('/mesociclo/:id', auth, eliminarMesociclo);
 router.post('/', auth, crearRutina);
-
 router.put('/:id', auth, actualizarRutina);
 router.delete('/:id', auth, eliminarRutina);
 
