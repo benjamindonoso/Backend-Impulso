@@ -1,10 +1,30 @@
 const jwt = require('jsonwebtoken');
 
-// Esta es tu "llave secreta". En producción deberías guardarla en un .env
-const JWT_SECRET = 'mi_secreto_super_seguro_2026'; 
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || !secret.trim()) {
+    throw new Error('JWT_SECRET debe estar definido en las variables de entorno.');
+  }
+  if (secret.length < 32) {
+    console.warn('[SEGURIDAD] Se recomienda usar un JWT_SECRET de al menos 32 caracteres aleatorios.');
+  }
+  return secret;
+}
 
+const JWT_SECRET = getJwtSecret();
+
+function extractBearerToken(req) {
+  const header = req.header('Authorization');
+  if (!header || !header.startsWith('Bearer ')) return null;
+  const token = header.slice(7).trim();
+  return token || null;
+}
+
+/**
+ * Autentica a un administrador del panel (excluye tokens de kiosco).
+ */
 const auth = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+  const token = extractBearerToken(req);
 
   if (!token) {
     return res.status(401).json({ error: 'Acceso denegado. No hay token.' });
@@ -12,11 +32,70 @@ const auth = (req, res, next) => {
 
   try {
     const verified = jwt.verify(token, JWT_SECRET);
-    req.user = verified;
+    if (verified.scope === 'kiosco') {
+      return res.status(403).json({ error: 'Token sin privilegios administrativos.' });
+    }
+    req.user = {
+      ...verified,
+      rol: verified.rol || 'ADMIN_GYM',
+    };
     next();
   } catch (error) {
-    res.status(400).json({ error: 'Token no válido.' });
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Sesión expirada. Inicia sesión nuevamente.' });
+    }
+    return res.status(401).json({ error: 'Token no válido.' });
   }
 };
 
-module.exports = { auth, JWT_SECRET };
+/**
+ * Middleware de control de acceso basado en roles (RBAC).
+ */
+const requireRole = (...rolesPermitidos) => (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'No autenticado.' });
+  }
+  const rolUsuario = req.user.rol || 'ADMIN_GYM';
+  if (rolUsuario === 'SUPERADMIN' || rolesPermitidos.includes(rolUsuario)) {
+    return next();
+  }
+  return res.status(403).json({ error: 'No tienes permisos para acceder a este recurso.' });
+};
+
+/**
+ * Permite acceso a un administrador O a un alumno autenticado en el kiosco
+ * únicamente para los IDs de cliente autorizados en su token.
+ */
+const authKioscoOrAdmin = (req, res, next) => {
+  const token = extractBearerToken(req);
+  if (!token) {
+    return res.status(401).json({ error: 'Acceso denegado. No hay token.' });
+  }
+
+  try {
+    const verified = jwt.verify(token, JWT_SECRET);
+
+    if (verified.scope === 'kiosco') {
+      const requestedId = Number(req.params.clienteId);
+      const allowedIds = Array.isArray(verified.allowedIds) ? verified.allowedIds : [];
+      if (!Number.isInteger(requestedId) || !allowedIds.includes(requestedId)) {
+        return res.status(403).json({ error: 'No autorizado para consultar este perfil.' });
+      }
+      req.kiosco = verified;
+      return next();
+    }
+
+    req.user = {
+      ...verified,
+      rol: verified.rol || 'ADMIN_GYM',
+    };
+    return next();
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Sesión expirada.' });
+    }
+    return res.status(401).json({ error: 'Token no válido.' });
+  }
+};
+
+module.exports = { auth, requireRole, authKioscoOrAdmin, JWT_SECRET };

@@ -1,8 +1,15 @@
-// src/lib/prisma.js
-const { PrismaClient } = require('@prisma/client')
+const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
-})
+const globalForPrisma = globalThis;
 
-module.exports = prisma
+const prisma =
+  globalForPrisma.__prisma ||
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'production' ? ['error', 'warn'] : ['warn', 'error'],
+  });
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.__prisma = prisma;
+}
+
+module.exports = prisma;

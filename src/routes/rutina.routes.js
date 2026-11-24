@@ -1,16 +1,17 @@
 const express = require('express');
-const router = express.Router();
-const { auth } = require('../middlewares/auth');
-const { 
-  getEstructuraEntrenamiento, 
-  crearMesociclo, 
+const { auth, authKioscoOrAdmin } = require('../middlewares/auth');
+const {
+  getEstructuraEntrenamiento,
+  crearMesociclo,
   crearRutina,
   actualizarRutina,
   eliminarRutina,
-  eliminarMesociclo
+  eliminarMesociclo,
 } = require('../controllers/rutina.controller');
 
-router.get('/cliente/:clienteId', getEstructuraEntrenamiento);
+const router = express.Router();
+
+router.get('/cliente/:clienteId', authKioscoOrAdmin, getEstructuraEntrenamiento);
 router.post('/mesociclo', auth, crearMesociclo);
 router.delete('/mesociclo/:id', auth, eliminarMesociclo);
 router.post('/', auth, crearRutina);
