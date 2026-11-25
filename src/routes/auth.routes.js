@@ -31,13 +31,18 @@ router.post('/login', loginLimiter, async (req, res) => {
     const validPassword = await bcrypt.compare(password, admin.passwordHash);
     if (!validPassword) return res.status(401).json({ error: 'Credenciales inválidas' });
 
+    const rol = admin.rol || 'ADMIN_GYM';
+    if (rol !== 'ADMIN_GYM' && rol !== 'SUPERADMIN') {
+      return res.status(403).json({ error: 'Esta cuenta pertenece al área de Kinesiología.' });
+    }
+
     const token = jwt.sign(
-      { id: admin.id, rol: 'ADMIN_GYM' },
+      { id: admin.id, rol },
       JWT_SECRET,
       { expiresIn: '8h' }
     );
 
-    res.json({ token, admin: { id: admin.id, nombre: admin.nombre } });
+    res.json({ token, admin: { id: admin.id, nombre: admin.nombre, rol } });
   } catch (error) {
     console.error('[AUTH LOGIN ERROR]:', error);
     res.status(500).json({ error: 'Error en el servidor' });

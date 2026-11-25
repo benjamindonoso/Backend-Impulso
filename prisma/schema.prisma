@@ -19,18 +19,26 @@ model Mesociclo {
 }
 
 model Administrador {
-  id            Int      @id @default(autoincrement())
+  id                  Int      @id @default(autoincrement())
 
-  nombre        String
+  nombre              String
 
-  email         String   @unique
+  email               String   @unique
 
-  passwordHash  String
+  passwordHash        String
 
-  auditorias    Auditoria[]
+  rol                 String   @default("ADMIN_GYM") // ADMIN_GYM | KINESIOLOGO | SUPERADMIN
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  especialidad        String?
+
+  registroProfesional String?
+
+  auditorias          Auditoria[]
+  evaluacionesKine    EvaluacionKine[]
+  evolucionesKine     EvolucionKine[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model Familia {
@@ -162,4 +170,142 @@ model RutinaEjercicio {
   admin       Administrador  @relation(fields: [adminId], references: [id])
   
   createdAt   DateTime       @default(now())
+}
+
+// =======================================================
+// MÓDULO DE KINESIOLOGÍA (TABLAS AISLADAS DEL GIMNASIO)
+// =======================================================
+
+model PacienteKine {
+  id                   Int              @id @default(autoincrement())
+  rut                  String?          @unique
+  nombre               String
+  apellidoP            String
+  apellidoM            String           @default("")
+  fechaNacimiento      DateTime?
+  telefono             String?
+  email                String?
+  prevision            String?
+  ocupacion            String?
+  medicoDerivante      String?
+  diagnosticoMedico    String?
+  motivoConsulta       String?
+  antecedentesMorbidos String?
+  estadoTratamiento    String           @default("EN_TRATAMIENTO") // EN_TRATAMIENTO | ALTA | PAUSADO
+  activo               Boolean          @default(true)
+
+  evaluaciones         EvaluacionKine[]
+  evoluciones          EvolucionKine[]
+  rutinasKine          RutinaKine[]
+
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([nombre])
+  @@index([apellidoP])
+  @@index([activo])
+}
+
+model EvaluacionKine {
+  id                   Int           @id @default(autoincrement())
+  pacienteId           Int
+  paciente             PacienteKine  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  kinesiologoId        Int
+  kinesiologo          Administrador @relation(fields: [kinesiologoId], references: [id])
+
+  fecha                DateTime      @default(now())
+  tipo                 String        @default("INICIAL") // INICIAL | REEVALUACION | ALTA
+  zonaAfectada         String?
+  anamnesis            String?
+  evaReposo            Int?
+  evaMovimiento        Int?
+  rangoArticular       String?
+  fuerzaMuscular       String?
+  pruebasEspeciales    String?
+  evaluacionPostural   String?
+  diagnosticoKinesico  String?
+  objetivos            String?
+  planTratamiento      String?
+
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@index([pacienteId, fecha])
+}
+
+model EvolucionKine {
+  id            Int           @id @default(autoincrement())
+  pacienteId    Int
+  paciente      PacienteKine  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  kinesiologoId Int
+  kinesiologo   Administrador @relation(fields: [kinesiologoId], references: [id])
+
+  numeroSesion  Int?
+  fecha         DateTime      @default(now())
+  asistencia    String        @default("ASISTIO") // ASISTIO | INASISTENCIA | REPROGRAMADA
+  evaPre        Int?
+  evaPost       Int?
+  subjetivo     String?
+  objetivo      String?
+  analisis      String?
+  plan          String?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([pacienteId, fecha])
+}
+
+model EjercicioKine {
+  id                   Int                   @id @default(autoincrement())
+  nombre               String                @unique
+  zonaCorporal         String?
+  categoria            String?
+  descripcion          String?
+  indicacionesClinicas String?
+  videoUrl             String?
+
+  rutinas              RutinaKineEjercicio[]
+
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+}
+
+model RutinaKine {
+  id                    Int                   @id @default(autoincrement())
+  pacienteId            Int
+  paciente              PacienteKine          @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
+  nombre                String
+  fase                  String?
+  frecuenciaSemana      String?
+  indicacionesGenerales String?
+  dolorMaximoTolerable  Int?
+  activa                Boolean               @default(true)
+
+  ejercicios            RutinaKineEjercicio[]
+
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  @@index([pacienteId, activa])
+}
+
+model RutinaKineEjercicio {
+  id              Int           @id @default(autoincrement())
+  rutinaKineId    Int
+  rutinaKine      RutinaKine    @relation(fields: [rutinaKineId], references: [id], onDelete: Cascade)
+  ejercicioKineId Int
+  ejercicioKine   EjercicioKine @relation(fields: [ejercicioKineId], references: [id])
+
+  orden           Int
+  series          Int
+  repeticiones    Int
+  duracionSeg     Int?
+  peso            String?
+  descansoSeg     Int?
+  frecuencia      String?
+  observaciones   String?
+
+  createdAt       DateTime      @default(now())
 }

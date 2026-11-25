@@ -1,10 +1,10 @@
 const express = require('express');
 const prisma = require('../lib/prisma');
-const { auth } = require('../middlewares/auth');
+const { auth, requireRole } = require('../middlewares/auth');
 
 const router = express.Router();
 
-router.use(auth);
+router.use(auth, requireRole('ADMIN_GYM'));
 
 function validarVideoUrl(videoUrl) {
   if (videoUrl === undefined || videoUrl === null) return null;

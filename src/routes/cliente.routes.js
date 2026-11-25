@@ -1,5 +1,5 @@
 const express = require('express');
-const { auth } = require('../middlewares/auth');
+const { auth, requireRole } = require('../middlewares/auth');
 const {
   getClientes,
   crearCliente,
@@ -10,7 +10,7 @@ const {
 
 const router = express.Router();
 
-router.use(auth);
+router.use(auth, requireRole('ADMIN_GYM'));
 
 router.put('/bulk', actualizacionMasivaClientes);
 router.get('/', getClientes);

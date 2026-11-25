@@ -1,18 +1,19 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const prisma = require('../lib/prisma');
-const { auth } = require('../middlewares/auth');
+const { auth, requireRole } = require('../middlewares/auth');
 
 const router = express.Router();
+const ROLES_VALIDOS = new Set(['ADMIN_GYM', 'KINESIOLOGO', 'SUPERADMIN']);
 
-// Todas las rutas administrativas requieren token válido
-router.use(auth);
+// Todas las rutas administrativas del gimnasio requieren token de ADMIN_GYM o SUPERADMIN
+router.use(auth, requireRole('ADMIN_GYM'));
 
 // GET: Listar todos los administradores
 router.get('/', async (req, res) => {
   try {
     const admins = await prisma.administrador.findMany({
-      select: { id: true, nombre: true, email: true, createdAt: true },
+      select: { id: true, nombre: true, email: true, rol: true, especialidad: true, registroProfesional: true, createdAt: true },
       orderBy: { id: 'asc' },
     });
     res.json(admins);
@@ -22,9 +23,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST: Crear nuevo administrador
+// POST: Crear nuevo administrador (permite crear ADMIN_GYM, KINESIOLOGO o SUPERADMIN si es SUPERADMIN)
 router.post('/crear', async (req, res) => {
-  const { nombre, email, password } = req.body || {};
+  const { nombre, email, password, rol, especialidad, registroProfesional } = req.body || {};
 
   if (typeof nombre !== 'string' || !nombre.trim()) {
     return res.status(400).json({ error: 'El nombre es obligatorio' });
@@ -36,6 +37,17 @@ router.post('/crear', async (req, res) => {
     return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
   }
 
+  let rolAsignado = 'ADMIN_GYM';
+  if (rol !== undefined) {
+    if (!ROLES_VALIDOS.has(rol)) {
+      return res.status(400).json({ error: 'Rol no válido' });
+    }
+    if (rol === 'SUPERADMIN' && req.user.rol !== 'SUPERADMIN') {
+      return res.status(403).json({ error: 'Solo un SUPERADMIN puede crear otro SUPERADMIN' });
+    }
+    rolAsignado = rol;
+  }
+
   try {
     const passwordHash = await bcrypt.hash(password, 12);
     const nuevoAdmin = await prisma.$transaction(async (tx) => {
@@ -44,8 +56,11 @@ router.post('/crear', async (req, res) => {
           nombre: nombre.trim(),
           email: email.trim().toLowerCase(),
           passwordHash,
+          rol: rolAsignado,
+          especialidad: typeof especialidad === 'string' && especialidad.trim() ? especialidad.trim() : null,
+          registroProfesional: typeof registroProfesional === 'string' && registroProfesional.trim() ? registroProfesional.trim() : null,
         },
-        select: { id: true, nombre: true, email: true },
+        select: { id: true, nombre: true, email: true, rol: true },
       });
 
       await tx.auditoria.create({
